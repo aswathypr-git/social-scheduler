@@ -1,0 +1,86 @@
+{
+  "tokens": [
+    {
+      "id": "10eJ81mlMWLvMbAimB-RZ",
+      "platform": "facebook",
+      "accessToken": "mock-access-token-123",
+      "refreshToken": "mock-refresh-token-456",
+      "expiresAt": 1763867748563
+    }
+  ],
+  "posts": [
+    {
+      "id": "s_UfHDBgPrvRFV9Sle8h-",
+      "text": "Schedule a post: Announcing our new tool — keep it short and friendly",
+      "platform": [
+        "twitter"
+      ],
+      "status": "posted",
+      "scheduledAt": 1763836771581,
+      "createdAt": 1763836766581,
+      "attempts": 0,
+      "lastError": null
+    },
+    {
+      "id": "RnEiCgtj7Ll7-GzPvyaQL",
+      "text": "Hello world",
+      "platform": [
+        "twitter"
+      ],
+      "status": "posted",
+      "scheduledAt": 1763837687375,
+      "createdAt": 1763837677404,
+      "attempts": 0,
+      "lastError": null
+    },
+    {
+      "id": "qfokbpkd2znQJOXAPGoQ6",
+      "text": "Hello from local test",
+      "platform": [
+        "twitter"
+      ],
+      "status": "queued",
+      "scheduledAt": 1763849907185,
+      "createdAt": 1763849897206,
+      "attempts": 0,
+      "lastError": null
+    },
+    {
+      "id": "1kl_0-wp0vxF4Yr7JlMf1",
+      "text": "Please schedule a tweet announcing the test",
+      "platform": [
+        "twitter"
+      ],
+      "status": "queued",
+      "scheduledAt": 1763849908957,
+      "createdAt": 1763849903957,
+      "attempts": 0,
+      "lastError": null
+    },
+    {
+      "id": "SbgIs9A8g_mpRwh55vQRL",
+      "text": "Please schedule a tweet announcing the test",
+      "platform": [
+        "twitter"
+      ],
+      "status": "queued",
+      "scheduledAt": 1763850144194,
+      "createdAt": 1763850139194,
+      "attempts": 0,
+      "lastError": null
+    }
+  ],
+  "analytics": [
+    {
+      "id": "_3feClZQqrrqYB-Mq9ms3",
+      "platform": "twitter",
+      "postId": "s_UfHDBgPrvRFV9Sle8h-",
+      "fetchedAt": 1763836849195,
+      "metrics": {
+        "impressions": 274,
+        "clicks": 50,
+        "engagement": 458
+      }
+    }
+  ]
+}

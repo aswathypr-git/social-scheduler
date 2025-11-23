@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Social Scheduler – Chat UI</title>
+  <style>
+    :root{
+      --bg1: linear-gradient(180deg,#0f172a 0%, #0b1220 100%);
+      --card:#0f172a88;
+      --accent:#5b8cff;
+      --muted:#9aa6bf;
+      --surface:#0f172a;
+      --card-bg: rgba(255,255,255,0.03);
+      --user-bg: linear-gradient(90deg,#4f46e5,#06b6d4);
+      --bot-bg: rgba(255,255,255,0.04);
+    }
+
+    html,body{height:100%;margin:0}
+    body{
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: var(--bg1);
+      color: #e6eef8;
+      -webkit-font-smoothing:antialiased;
+      display:flex;align-items:center;justify-content:center;padding:28px;
+    }
+
+
+    .app {
+      width:100%;max-width:900px;height:100%;display:flex;flex-direction:column;gap:12px;position:relative;
+    }
+
+    header{
+      background:transparent;color:var(--accent);font-weight:700;font-size:22px;padding:6px 0;text-align:center
+    }
+
+    .topbar{display:flex;align-items:center;gap:12px;padding:12px;background:var(--card-bg);border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.6)}
+
+    .chat-card{flex:1;display:flex;flex-direction:column;justify-content:flex-end;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:14px;overflow:hidden;box-shadow:0 8px 30px rgba(2,6,23,0.6)}
+
+    #chat-box{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:10px}
+
+    .msg{max-width:78%;padding:12px 14px;border-radius:12px;line-height:1.3;font-size:14px;box-shadow:0 2px 8px rgba(2,6,23,0.4)}
+    .user{align-self:flex-end;background:var(--user-bg);color:white;border-bottom-right-radius:4px}
+    .bot{align-self:flex-start;background:var(--bot-bg);color:#e6eef8;border-bottom-left-radius:4px}
+
+    form{display:flex;gap:10px;padding:12px;background:transparent;border-top:1px solid rgba(255,255,255,0.03)}
+    input{flex:1;padding:12px 14px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);border-radius:10px;color:inherit}
+    .btn{padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:600}
+    .btn-primary{background:var(--accent);color:#051123}
+    .btn-twitter{background:#1da1f2;color:#042235}
+    .btn-fb{background:#1877f2;color:#042235}
+
+    /* responsive */
+    @media (max-width:700px){.app{max-width:100%} .topbar{flex-direction:column;align-items:flex-start}}
+    .buttons{position:absolute;top:18px;right:28px;display:flex;flex-direction:column;gap:10px;align-items:flex-end}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>Social Scheduler – Chat</header>
+
+    <div class="buttons" aria-hidden="false">
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+        <button id="connect-twitter" class="btn btn-twitter">Connect Twitter</button>
+        <span id="oauth-status-twitter" style="font-size:13px;color:var(--muted)">Not connected</span>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+        <button id="connect-facebook" class="btn btn-fb">Connect Facebook</button>
+        <span id="oauth-status-facebook" style="font-size:13px;color:var(--muted)">Not connected</span>
+      </div>
+    </div>
+
+    <div class="chat-card">
+      <div id="chat-box"></div>
+
+      <form id="chat-form">
+        <input id="msg" autocomplete="off" placeholder="Ask: schedule post, get analytics, improve post..." />
+        <button type="submit" class="btn btn-primary">Send</button>
+      </form>
+    </div>
+  </div>
+
+<script>
+  const form = document.getElementById("chat-form");
+  const input = document.getElementById("msg");
+  const chat = document.getElementById("chat-box");
+
+  const addMessage = (text, sender) => {
+    const div = document.createElement("div");
+    div.classList.add("msg", sender);
+    div.textContent = text;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+  };
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const message = input.value.trim();
+    if (!message) return;
+
+    addMessage(message, "user");
+    input.value = "";
+
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message })
+    });
+
+    const data = await res.json();
+    addMessage(data.response, "bot");
+  });
+
+  // OAuth connect helpers
+  const connectBtn = document.getElementById('connect-twitter');
+  const statusEl = document.getElementById('oauth-status-twitter');
+  const connectFbBtn = document.getElementById('connect-facebook');
+  const statusFbEl = document.getElementById('oauth-status-facebook');
+
+  async function pollTokens(platform, onFound, timeoutMs = 120000) {
+    const start = Date.now();
+    const interval = setInterval(async () => {
+      try {
+        const r = await fetch('/api/oauth/tokens');
+        if (!r.ok) return;
+        const tokens = await r.json();
+        const tk = tokens.find(t => t.platform === platform);
+        if (tk) {
+          clearInterval(interval);
+          onFound(tk);
+        } else if (Date.now() - start > timeoutMs) {
+          clearInterval(interval);
+          // indicate timeout for the platform that started the flow
+          if (platform === 'twitter') {
+            statusEl.textContent = 'Twitter OAuth timed out';
+            connectBtn.disabled = false;
+          } else if (platform === 'facebook') {
+            statusFbEl.textContent = 'Facebook OAuth timed out';
+            connectFbBtn.disabled = false;
+          }
+        }
+      } catch (e) {
+        // ignore transient errors
+      }
+    }, 2000);
+    return interval;
+  }
+
+  // Twitter connect
+  connectBtn.addEventListener('click', async () => {
+    connectBtn.disabled = true;
+    statusEl.textContent = 'Opening Twitter auth...';
+    try {
+      const r = await fetch('/api/oauth/twitter/url');
+      if (!r.ok) throw new Error('failed to get auth url');
+      const data = await r.json();
+      const url = data.url;
+      const popup = window.open(url, '_blank', 'width=600,height=700');
+
+      pollTokens('twitter', (tk) => {
+        const exp = tk.expiresAt ? new Date(tk.expiresAt).toLocaleString() : 'unknown';
+        statusEl.textContent = `Twitter: Connected (expires: ${exp})`;
+        try { if (popup && !popup.closed) popup.close(); } catch(e) {}
+        connectBtn.disabled = false;
+      });
+    } catch (err) {
+      statusEl.textContent = 'Twitter: Failed to start OAuth';
+      connectBtn.disabled = false;
+    }
+  });
+
+  // Facebook connect
+  connectFbBtn.addEventListener('click', async () => {
+    connectFbBtn.disabled = true;
+    statusFbEl.textContent = 'Opening Facebook auth...';
+    try {
+      const r = await fetch('/api/oauth/facebook/url');
+      if (!r.ok) throw new Error('failed to get auth url');
+      const data = await r.json();
+      const url = data.url;
+      const popup = window.open(url, '_blank', 'width=800,height=700');
+
+      pollTokens('facebook', (tk) => {
+        const exp = tk.expiresAt ? new Date(tk.expiresAt).toLocaleString() : 'unknown';
+        statusFbEl.textContent = `Facebook: Connected (expires: ${exp})`;
+        try { if (popup && !popup.closed) popup.close(); } catch(e) {}
+        connectFbBtn.disabled = false;
+      });
+    } catch (err) {
+      statusFbEl.textContent = 'Facebook: Failed to start OAuth';
+      connectFbBtn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
